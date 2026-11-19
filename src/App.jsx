@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Navbar } from './components/ui/Navbar'
 import { HeroRoomScene } from './components/3d/HeroRoomScene'
@@ -129,22 +129,24 @@ export default function App() {
           <directionalLight position={[5, 10, 5]} intensity={1.2} color="#bae6fd" />
           <directionalLight position={[-5, 8, -3]} intensity={0.8} color="#c084fc" />
 
-          {/* Floating Cyber Space Dust & Stars */}
-          <SpaceBackground count={500} />
+          <Suspense fallback={null}>
+            {/* Floating Cyber Space Dust & Stars */}
+            <SpaceBackground count={500} />
 
-          {/* 1. HERO ROOM & DESK SCENE (Lifts up as user scrolls) */}
-          <HeroRoomScene liftProgress={roomLiftProgress} mousePos={mousePos} />
+            {/* 1. HERO ROOM & DESK SCENE (Lifts up as user scrolls) */}
+            <HeroRoomScene liftProgress={roomLiftProgress} mousePos={mousePos} />
 
-          {/* 2. HOLOGRAPHIC MULTI-SCREEN CORRIDOR (Visible as user scrolls down) */}
-          <group position={[0, -roomLiftProgress * 0.2 + (1 - roomLiftProgress) * -12, 0]}>
-            <ScreenCorridor
-              activeIndex={activeProjectIndex}
-              onSelectProject={handleOpenProject}
-              isZooming={isZooming}
-              notReadyStates={notReadyStates}
-              onTriggerNotReady={handleTriggerNotReady}
-            />
-          </group>
+            {/* 2. HOLOGRAPHIC MULTI-SCREEN CORRIDOR (Visible as user scrolls down) */}
+            <group position={[0, -roomLiftProgress * 0.2 + (1 - roomLiftProgress) * -12, 0]}>
+              <ScreenCorridor
+                activeIndex={activeProjectIndex}
+                onSelectProject={handleOpenProject}
+                isZooming={isZooming}
+                notReadyStates={notReadyStates}
+                onTriggerNotReady={handleTriggerNotReady}
+              />
+            </group>
+          </Suspense>
         </Canvas>
       </div>
 

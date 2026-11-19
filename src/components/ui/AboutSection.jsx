@@ -200,7 +200,7 @@ export function AboutSection() {
         </div>
         <div className="flex items-center gap-6">
           <a
-            href="https://github.com/YanlisDegil/heronji-hub"
+            href="https://github.com/YanlisDegil/Heronji-Main"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-cyan-400 transition-colors"

@@ -277,7 +277,6 @@ function ProjectScreenPod({
             color="#ef4444"
             anchorX="center"
             anchorY="middle"
-            font="https://fonts.gstatic.com/s/orbitron/v31/yMJRMIlzdpvBhQQL_Ga4tL1R_C4546qBxP_W2vxmddvc9A.woff2"
           >
             HENÜZ HAZIR DEĞİL
           </Text>
@@ -357,7 +356,6 @@ function ProjectScreenPod({
             color={isActive ? project.themeColor : '#ffffff'}
             anchorX="center"
             anchorY="middle"
-            font="https://fonts.gstatic.com/s/orbitron/v31/yMJRMIlzdpvBhQQL_Ga4tL1R_C4546qBxP_W2vxmddvc9A.woff2"
           >
             {project.title}
           </Text>

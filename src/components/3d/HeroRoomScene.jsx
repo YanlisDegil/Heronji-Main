@@ -225,7 +225,6 @@ export function HeroRoomScene({ liftProgress = 0, mousePos = { x: 0, y: 0 } }) {
           anchorY="middle"
           outlineWidth={0.018}
           outlineColor="#0284c7"
-          font="https://fonts.gstatic.com/s/orbitron/v31/yMJRMIlzdpvBhQQL_Ga4tL1R_C4546qBxP_W2vxmddvc9A.woff2"
         >
           HERONJI TOPLULUĞU
         </Text>
