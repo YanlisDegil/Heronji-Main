@@ -1,25 +1,57 @@
 import React, { useState, useEffect, useRef, Suspense } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { Canvas, useFrame } from '@react-three/fiber'
+import * as THREE from 'three'
 import { Navbar } from './components/ui/Navbar'
 import { HeroRoomScene } from './components/3d/HeroRoomScene'
-import { ScreenCorridor, PROJECTS } from './components/3d/ScreenCorridor'
-import { SpaceBackground } from './components/3d/SpaceBackground'
-import { ProjectControls } from './components/ui/ProjectControls'
+import { CloudsTransition } from './components/3d/CloudsTransition'
+import { VerticalProjectCorridor, VERTICAL_PROJECTS } from './components/3d/VerticalProjectCorridor'
 import { AboutSection } from './components/ui/AboutSection'
 import { playClickSound, playWarpSound, playWarningSound } from './utils/audio'
 import { HiArrowDown, HiExternalLink } from 'react-icons/hi'
 import { BiAtom, BiBookOpen } from 'react-icons/bi'
 
+// ─── SMOOTH 3D CAMERA CONTROLLER TRACKING SCROLL ───
+function CameraController({ scrollProgress, isZooming }) {
+  useFrame((state) => {
+    if (isZooming) {
+      state.camera.position.z = THREE.MathUtils.lerp(state.camera.position.z, 2.2, 0.08)
+      return
+    }
+
+    // Map scrollProgress (0 to 1) to camera vertical trajectory
+    // 0: Hero room [y = 1.25]
+    // ~0.15: Clouds mist layer [y = -3.5]
+    // ~0.30: Lab Dedektifi [y = -7.0]
+    // ~0.45: Yanlış Değil [y = -14.0]
+    // ~0.60: J.A.R.V.I.S. [y = -21.0]
+    // ~0.72: FRIDAY [y = -28.0]
+    // ~0.85: ULTRON [y = -35.0]
+    // 1.00: Hakkımda bottom [y = -41.0]
+    const targetY = 1.25 - scrollProgress * 42.0
+
+    state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, targetY, 0.08)
+    state.camera.position.z = THREE.MathUtils.lerp(state.camera.position.z, 5.4, 0.08)
+
+    // Camera looks slightly ahead along the descent
+    state.camera.lookAt(0, targetY - 0.2, 0)
+  })
+  return null
+}
+
 export default function App() {
   const [scrollProgress, setScrollProgress] = useState(0)
-  const [activeProjectIndex, setActiveProjectIndex] = useState(0)
   const [currentSection, setCurrentSection] = useState('hero')
   const [isZooming, setIsZooming] = useState(false)
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const [notReadyStates, setNotReadyStates] = useState({})
 
+  const heroRef = useRef(null)
+  const proj1Ref = useRef(null)
+  const proj2Ref = useRef(null)
+  const proj3Ref = useRef(null)
+  const proj4Ref = useRef(null)
+  const proj5Ref = useRef(null)
   const aboutSectionRef = useRef(null)
-  const projectsSectionRef = useRef(null)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,9 +60,9 @@ export default function App() {
       const progress = maxScroll > 0 ? Math.min(1, Math.max(0, scrollY / maxScroll)) : 0
       setScrollProgress(progress)
 
-      if (scrollY < window.innerHeight * 0.4) {
+      if (progress < 0.15) {
         setCurrentSection('hero')
-      } else if (scrollY < window.innerHeight * 1.5) {
+      } else if (progress < 0.85) {
         setCurrentSection('projects')
       } else {
         setCurrentSection('about')
@@ -88,7 +120,7 @@ export default function App() {
       setTimeout(() => {
         window.open(project.url, '_blank', 'noopener,noreferrer')
         setIsZooming(false)
-      }, 750)
+      }, 700)
     }
   }
 
@@ -97,62 +129,63 @@ export default function App() {
     if (section === 'hero') {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } else if (section === 'projects') {
-      window.scrollTo({ top: window.innerHeight * 0.9, behavior: 'smooth' })
+      proj1Ref.current?.scrollIntoView({ behavior: 'smooth' })
     } else if (section === 'about') {
       aboutSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
   }
 
-  // Smooth lift of room on scroll
-  const roomLiftProgress = Math.min(1, Math.max(0, scrollProgress * 2.8))
-
   return (
-    <div className="relative min-h-screen bg-[#070a0f] text-slate-100 selection:bg-slate-700 selection:text-white font-sans">
+    <div className="relative min-h-screen bg-[#0b1324] text-slate-100 selection:bg-slate-700 selection:text-white font-sans overflow-x-hidden">
       {/* Top Navbar */}
       <Navbar currentSection={currentSection} onNavigate={handleNavigate} />
 
-      {/* ─── 3D CANVAS (REALISTIC LIGHTING & MATERIALS) ─── */}
+      {/* ─── FIXED FULLSCREEN 3D CANVAS (RICH ATMOSPHERE & REAL 3D SCENE) ─── */}
       <div className="fixed inset-0 z-0 pointer-events-auto">
         <Canvas
-          camera={{ position: [0, 1.25, 5.2], fov: 46 }}
+          camera={{ position: [0, 1.25, 5.4], fov: 46 }}
           dpr={[1, 2]}
           gl={{ antialias: true, alpha: false }}
         >
-          <color attach="background" args={['#070a0f']} />
+          {/* Atmospheric Background & Volumetric Fog (NO PITCH BLACK!) */}
+          <color attach="background" args={['#0e1726']} />
+          <fog attach="fog" args={['#0e1726', 7, 36]} />
 
-          {/* Neutral, Soft Studio Lighting */}
-          <ambientLight intensity={0.6} color="#ffffff" />
-          <directionalLight position={[4, 8, 4]} intensity={0.9} color="#ffffff" />
-          <directionalLight position={[-4, 5, -2]} intensity={0.35} color="#cbd5e1" />
+          {/* Balanced Studio Lighting with Warm Key and Soft Cool Fills */}
+          <ambientLight intensity={0.7} color="#e2e8f0" />
+          <directionalLight position={[5, 10, 6]} intensity={1.1} color="#ffffff" />
+          <directionalLight position={[-6, 6, -3]} intensity={0.5} color="#93c5fd" />
 
           <Suspense fallback={null}>
-            {/* Subtle floating dust motes */}
-            <SpaceBackground count={100} />
+            {/* Smooth 3D Camera tracking the vertical descent */}
+            <CameraController scrollProgress={scrollProgress} isZooming={isZooming} />
 
-            {/* 1. REALISTIC WORKSTATION SCENE (Slides up on scroll) */}
-            <HeroRoomScene liftProgress={roomLiftProgress} mousePos={mousePos} />
+            {/* 1. HERO ROOM & DESK WORKSTATION (Top at y = 0) */}
+            <HeroRoomScene liftProgress={0} mousePos={mousePos} />
 
-            {/* 2. REALISTIC MONITORS CORRIDOR */}
-            <group position={[0, -roomLiftProgress * 0.2 + (1 - roomLiftProgress) * -12, 0]}>
-              <ScreenCorridor
-                activeIndex={activeProjectIndex}
-                onSelectProject={handleOpenProject}
-                isZooming={isZooming}
-                notReadyStates={notReadyStates}
-                onTriggerNotReady={handleTriggerNotReady}
-              />
-            </group>
+            {/* 2. PROCEDURAL 3D CLOUDS & MIST BARRIER (Soft transition between room & projects) */}
+            <CloudsTransition position={[0, -3.2, 0]} />
+
+            {/* 3. VERTICAL 3D PROJECT MONITORS (Stacked vertically along Y-axis) */}
+            <VerticalProjectCorridor
+              notReadyStates={notReadyStates}
+              onTriggerNotReady={handleTriggerNotReady}
+              onOpenProject={handleOpenProject}
+            />
+
+            {/* Clouds at the lower boundary near Hakkımda */}
+            <CloudsTransition position={[0, -39.0, 0]} />
           </Suspense>
         </Canvas>
       </div>
 
-      {/* ─── SCROLLABLE CONTENT & HERO OVERLAYS ─── */}
+      {/* ─── SCROLLABLE CONTENT SECTIONS (NO BLOCKING BOTTOM BARS!) ─── */}
       <div className="relative z-10 pointer-events-none">
-        {/* HERO SECTION OVERLAY */}
-        <section className="min-h-screen flex flex-col justify-between pt-28 pb-12 px-4 sm:px-8 max-w-6xl mx-auto">
+        {/* 1. HERO SECTION (ROOM & DESK VIEW) */}
+        <section ref={heroRef} className="min-h-screen flex flex-col justify-between pt-28 pb-12 px-4 sm:px-8 max-w-6xl mx-auto">
           {/* Headline & Mission */}
-          <div className="pointer-events-auto max-w-2xl mt-4 sm:mt-12">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-900 border border-slate-800 text-slate-400 text-xs font-mono mb-4">
+          <div className="pointer-events-auto max-w-xl mt-4 sm:mt-12 bg-slate-950/40 backdrop-blur-sm p-6 rounded-2xl border border-slate-800/60 shadow-lg">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-900 border border-slate-700/80 text-slate-300 text-xs font-mono mb-4">
               <span className="w-2 h-2 rounded-full bg-emerald-400" />
               <span>HERONJI.FX // GÖMÜLÜ SİSTEMLER &amp; 3D MİMARİ</span>
             </div>
@@ -162,12 +195,12 @@ export default function App() {
               <span className="text-slate-300">TOPLULUĞU</span>
             </h1>
 
-            <p className="mt-4 text-sm sm:text-base text-slate-300 leading-relaxed max-w-xl font-normal">
+            <p className="mt-4 text-sm sm:text-base text-slate-300 leading-relaxed font-normal">
               2026 Kayseri MEB Uluslararası Çizgi İzleyen Robot çalışmalarından gerçek zamanlı 
               3D bilim laboratuvarlarına kadar uzanan bağımsız mühendislik ve geliştirme alanı.
             </p>
 
-            {/* Action buttons */}
+            {/* Quick action buttons */}
             <div className="flex flex-wrap items-center gap-3 mt-6">
               <button
                 onClick={() => {
@@ -176,7 +209,7 @@ export default function App() {
                 }}
                 className="px-5 py-2.5 rounded-lg bg-slate-100 hover:bg-white text-slate-900 text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 shadow-sm"
               >
-                <span>Projeleri Gör</span>
+                <span>Projeleri İncele (Aşağı İn)</span>
                 <HiArrowDown className="text-sm" />
               </button>
 
@@ -207,48 +240,151 @@ export default function App() {
           </div>
 
           {/* Bottom Scroll Prompt */}
-          <div className="pointer-events-auto flex items-center justify-between text-xs font-mono text-slate-400 border-t border-slate-800/80 pt-4">
+          <div className="pointer-events-auto flex items-center justify-between text-xs font-mono text-slate-300 border-t border-slate-800/80 pt-4 bg-slate-950/30 backdrop-blur-sm px-4 rounded-lg">
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
               <span>MASA EKRANI: HERONJI TOPLULUĞU</span>
             </div>
             <button
               onClick={() => handleNavigate('projects')}
-              className="flex items-center gap-2 hover:text-slate-200 transition-colors cursor-pointer"
+              className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer"
             >
-              <span>AŞAĞI KAYDIRIN // PROJELERE GEÇİN</span>
-              <HiArrowDown />
+              <span>AŞAĞI KAYDIRIN // 3D BULUTLARDAN GEÇİN</span>
+              <HiArrowDown className="animate-bounce" />
             </button>
           </div>
         </section>
 
-        {/* ─── 2. PROJECTS CORRIDOR SPACER & CONTROLS ─── */}
-        <section
-          ref={projectsSectionRef}
-          className="min-h-screen relative flex flex-col justify-end pb-32 pt-20 px-4 sm:px-8 max-w-6xl mx-auto"
-        >
-          {/* Top Header */}
-          <div className="pointer-events-auto max-w-md mb-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-              Sistemler &amp; Modüller
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Ekranları kaydırarak inceleyin veya doğrudan platformlara giriş yapın.
-            </p>
+        {/* ─── 3D CLOUDS STRATUM (PASSING THROUGH MIST) ─── */}
+        <div className="h-[40vh] flex items-center justify-center">
+          <div className="pointer-events-auto px-4 py-1.5 rounded-full bg-slate-900/60 backdrop-blur-sm border border-slate-700/60 text-xs font-mono text-slate-300">
+            ☁️ 3D ATMOSFER TABAKASI // PROJE KORİDORUNA İNİLİYOR
           </div>
+        </div>
 
-          {/* Clean Floating Project Controller */}
-          <ProjectControls
-            activeIndex={activeProjectIndex}
-            onSelectIndex={setActiveProjectIndex}
-            onOpenProject={handleOpenProject}
-            notReadyStates={notReadyStates}
-            onTriggerNotReady={handleTriggerNotReady}
-          />
+        {/* ─── 2. VERTICAL PROJECTS SECTIONS (ONE FULL VIEWPORT PER SCREEN) ─── */}
+        {/* Project 1: Laboratuvar Dedektifi */}
+        <section ref={proj1Ref} className="min-h-screen flex flex-col justify-end pb-16 px-4 sm:px-8 max-w-6xl mx-auto">
+          <div className="pointer-events-auto max-w-md bg-slate-950/60 backdrop-blur-md p-5 rounded-xl border border-slate-800 shadow-xl">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="text-xs font-mono font-semibold text-emerald-400">01 // CANLI PROJE</span>
+            </div>
+            <h2 className="text-2xl font-bold text-white">Laboratuvar Dedektifi</h2>
+            <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+              Fizik, Kimya ve Biyoloji deneylerini tarayıcıda çalıştıran 3D bilim simülasyonu. 
+              Doğrudan ekrana veya butona tıklayarak giriş yapabilirsiniz.
+            </p>
+            <div className="mt-3">
+              <a
+                href="https://lab-dedektifi.vercel.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => playWarpSound()}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md transition-all"
+              >
+                <span>Siteyi Aç (lab-dedektifi.vercel.app)</span>
+                <HiExternalLink />
+              </a>
+            </div>
+          </div>
         </section>
 
-        {/* ─── 3. ABOUT SECTION ─── */}
-        <div ref={aboutSectionRef} className="pointer-events-auto relative bg-[#070a0f] border-t border-slate-800/80">
+        {/* Project 2: Yanlış Değil */}
+        <section ref={proj2Ref} className="min-h-screen flex flex-col justify-end pb-16 px-4 sm:px-8 max-w-6xl mx-auto">
+          <div className="pointer-events-auto max-w-md bg-slate-950/60 backdrop-blur-md p-5 rounded-xl border border-slate-800 shadow-xl">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-sky-400" />
+              <span className="text-xs font-mono font-semibold text-sky-400">02 // CANLI PLATFORM</span>
+            </div>
+            <h2 className="text-2xl font-bold text-white">Yanlış Değil</h2>
+            <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+              "Yanlışını yakalar, nedenini anlatır." Felsefe, bilim ve kavram yanılgılarını 
+              çözümleyen interaktif eğitim platformu.
+            </p>
+            <div className="mt-3">
+              <a
+                href="https://yanlisdegil.github.io/Yanlis-Degil/"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => playClickSound()}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-md transition-all"
+              >
+                <span>Siteyi Aç (yanlisdegil.github.io/Yanlis-Degil)</span>
+                <HiExternalLink />
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* Project 3: J.A.R.V.I.S. */}
+        <section ref={proj3Ref} className="min-h-screen flex flex-col justify-end pb-16 px-4 sm:px-8 max-w-6xl mx-auto">
+          <div className="pointer-events-auto max-w-md bg-slate-950/60 backdrop-blur-md p-5 rounded-xl border border-slate-800 shadow-xl">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-purple-400" />
+              <span className="text-xs font-mono font-semibold text-purple-400">03 // DONANIM PROTOKOLÜ</span>
+            </div>
+            <h2 className="text-2xl font-bold text-white">J.A.R.V.I.S.</h2>
+            <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+              C/C++ ve Python tabanlı mikrodenetleyici donanım kontrolü, sensör entegrasyonu ve otonom sistem çekirdeği.
+            </p>
+            <div className="mt-3">
+              <button
+                onClick={() => handleTriggerNotReady('jarvis')}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-medium transition-all"
+              >
+                <span>Durumu Kontrol Et (Kilitli)</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Project 4: FRIDAY */}
+        <section ref={proj4Ref} className="min-h-screen flex flex-col justify-end pb-16 px-4 sm:px-8 max-w-6xl mx-auto">
+          <div className="pointer-events-auto max-w-md bg-slate-950/60 backdrop-blur-md p-5 rounded-xl border border-slate-800 shadow-xl">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-amber-400" />
+              <span className="text-xs font-mono font-semibold text-amber-400">04 // ROBOTİK TELEMETRİ</span>
+            </div>
+            <h2 className="text-2xl font-bold text-white">FRIDAY Telemetri</h2>
+            <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+              2026 Kayseri MEB Çizgi İzleyen Robot sensör kalibrasyonu, PID hata katsayısı ve anlık motor telemetri analizi.
+            </p>
+            <div className="mt-3">
+              <button
+                onClick={() => handleTriggerNotReady('friday')}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-medium transition-all"
+              >
+                <span>Durumu Kontrol Et (Kilitli)</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Project 5: ULTRON */}
+        <section ref={proj5Ref} className="min-h-screen flex flex-col justify-end pb-16 px-4 sm:px-8 max-w-6xl mx-auto">
+          <div className="pointer-events-auto max-w-md bg-slate-950/60 backdrop-blur-md p-5 rounded-xl border border-slate-800 shadow-xl">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-rose-400" />
+              <span className="text-xs font-mono font-semibold text-rose-400">05 // GÜVENLİK ÇEKİRDEĞİ</span>
+            </div>
+            <h2 className="text-2xl font-bold text-white">ULTRON Mimari</h2>
+            <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+              Merkeziyetsiz gömülü cihaz haberleşmesi ve donanım seviyesinde otonom süreç güvenliği.
+            </p>
+            <div className="mt-3">
+              <button
+                onClick={() => handleTriggerNotReady('ultron')}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-medium transition-all"
+              >
+                <span>Durumu Kontrol Et (Kilitli)</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── 3. ABOUT SECTION (HAKKIMDA) ─── */}
+        <div ref={aboutSectionRef} className="pointer-events-auto relative bg-[#0b1324]/95 border-t border-slate-800">
           <AboutSection />
         </div>
       </div>

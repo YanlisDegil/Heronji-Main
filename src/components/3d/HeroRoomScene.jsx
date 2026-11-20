@@ -29,20 +29,20 @@ export function HeroRoomScene({ liftProgress = 0, mousePos = { x: 0, y: 0 } }) {
   return (
     <group ref={roomGroupRef} position={[0, -0.6, 0]}>
       {/* ─── REALISTIC STUDIO ARCHITECTURAL ROOM ─── */}
-      {/* Matte Dark Hardwood / Concrete Floor */}
+      {/* Matte Dark Hardwood / Architectural Floor */}
       <mesh position={[0, -1.8, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[26, 26]} />
+        <planeGeometry args={[28, 28]} />
         <meshStandardMaterial
-          color="#0c1017"
-          roughness={0.7}
-          metalness={0.15}
+          color="#162032"
+          roughness={0.65}
+          metalness={0.2}
         />
       </mesh>
 
       {/* Warm Soft Back Wall */}
       <mesh position={[0, 4, -6.5]}>
-        <planeGeometry args={[26, 12]} />
-        <meshStandardMaterial color="#0e131d" roughness={0.85} />
+        <planeGeometry args={[28, 14]} />
+        <meshStandardMaterial color="#1a253a" roughness={0.8} />
       </mesh>
 
       {/* ─── SOLID MATTE WALNUT WORKSTATION (REALISTIC DESK) ─── */}
