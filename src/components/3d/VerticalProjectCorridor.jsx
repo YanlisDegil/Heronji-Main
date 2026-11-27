@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
+import { CloudsTransition } from './CloudsTransition'
 import { playClickSound, playWarningSound, playWarpSound } from '../../utils/audio'
 
 export const VERTICAL_PROJECTS = [
@@ -15,7 +16,7 @@ export const VERTICAL_PROJECTS = [
     statusColor: '#10b981',
     url: 'https://lab-dedektifi.vercel.app/',
     isLive: true,
-    yPos: -7.0,
+    yPos: -7.5,
     accentColor: '#38bdf8',
   },
   {
@@ -28,7 +29,7 @@ export const VERTICAL_PROJECTS = [
     statusColor: '#38bdf8',
     url: 'https://yanlisdegil.github.io/Yanlis-Degil/',
     isLive: true,
-    yPos: -14.0,
+    yPos: -14.5,
     accentColor: '#60a5fa',
   },
   {
@@ -40,7 +41,7 @@ export const VERTICAL_PROJECTS = [
     status: 'DONANIM PROTOKOLÜ',
     statusColor: '#a78bfa',
     isLive: false,
-    yPos: -21.0,
+    yPos: -21.5,
     accentColor: '#a78bfa',
   },
   {
@@ -52,7 +53,7 @@ export const VERTICAL_PROJECTS = [
     status: 'GELİŞTİRİLİYOR',
     statusColor: '#fbbf24',
     isLive: false,
-    yPos: -28.0,
+    yPos: -28.5,
     accentColor: '#fbbf24',
   },
   {
@@ -64,7 +65,7 @@ export const VERTICAL_PROJECTS = [
     status: 'KİLİTLİ SİSTEM',
     statusColor: '#f87171',
     isLive: false,
-    yPos: -35.0,
+    yPos: -35.5,
     accentColor: '#f87171',
   },
 ]
@@ -385,34 +386,8 @@ function VerticalScreenPod({
         distance={5}
       />
 
-      {/* Atmospheric Cloud Puffs floating gently around the base of the podium */}
-      <PodiumCloudWisp yOffset={-1.9} />
-    </group>
-  )
-}
-
-function PodiumCloudWisp({ yOffset = -1.9 }) {
-  const meshRef = useRef()
-  useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y = state.clock.elapsedTime * 0.04
-    }
-  })
-
-  return (
-    <group ref={meshRef} position={[0, yOffset, 0]}>
-      {[-1.8, 0, 1.8].map((x, i) => (
-        <mesh key={i} position={[x, (i % 2) * 0.2, 0.5]}>
-          <sphereGeometry args={[0.7 + i * 0.15, 12, 12]} />
-          <meshStandardMaterial
-            color="#cbd5e1"
-            roughness={0.95}
-            transparent
-            opacity={0.18}
-            depthWrite={false}
-          />
-        </mesh>
-      ))}
+      {/* Realistic Cloud Wisps drifting gently around the base of the podium */}
+      <CloudsTransition position={[0, -2.1, -0.5]} density={12} spread={[7.5, 1.0, 3.5]} />
     </group>
   )
 }
